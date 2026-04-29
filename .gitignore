@@ -1,0 +1,14 @@
+# Docker volumes
+db_data/
+wp_data/
+
+# Build artifacts
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

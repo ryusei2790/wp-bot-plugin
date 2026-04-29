@@ -1,0 +1,12 @@
+/**
+ * Dify Chat Bot 管理画面用スタイル
+ * カラーピッカーとフォームレイアウトの調整
+ */
+
+.form-table .wp-picker-container {
+    display: inline-block;
+}
+
+.form-table .wp-picker-container .wp-color-result {
+    margin-top: 0;
+}
