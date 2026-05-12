@@ -116,6 +116,8 @@
     justify-content: center;
     border-radius: 4px;
     transition: background-color 0.15s ease;
+    /* テーマが button { pointer-events: none } 等を仕込むケースの保険として明示 */
+    pointer-events: auto !important;
 }
 
 .dify-chat-header__close:hover {
@@ -126,6 +128,8 @@
     width: 20px;
     height: 20px;
     fill: currentColor;
+    /* SVGがクリック対象になっても親 button へバブルが届くように明示 */
+    pointer-events: auto;
 }
 
 /* ========================================
