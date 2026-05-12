@@ -3,7 +3,7 @@
  * Plugin Name: Dify Chat Bot
  * Plugin URI:  https://github.com/ryusei/dify-chat-bot
  * Description: Dify AIと連携するチャットボットウィジェット。管理画面からボタン・ビュワーの位置・色・API設定をカスタマイズ可能。
- * Version:     1.0.2
+ * Version:     1.0.3
  * Author:      Ryusei
  * License:     GPL v2 or later
  * Text Domain: dify-chat-bot
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'DIFY_CHAT_BOT_VERSION', '1.0.2' );
+define( 'DIFY_CHAT_BOT_VERSION', '1.0.3' );
 define( 'DIFY_CHAT_BOT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DIFY_CHAT_BOT_URL', plugin_dir_url( __FILE__ ) );
 
