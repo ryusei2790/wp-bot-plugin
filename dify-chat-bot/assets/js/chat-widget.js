@@ -209,31 +209,56 @@
     // =============================================
 
     /**
+     * 「会話が存在しない」系のDify APIエラーかを判定
+     *
+     * 設計意図：
+     * APIキー変更や別アプリ切替で sessionStorage に残った conversation_id が
+     * 無効になるケースを検出する。Dify は message に "Conversation Not Exists"
+     * を返すため、文字列マッチで判定する（HTTPコードは 400/404 と揺れがあるため
+     * メッセージ側で判定する方が安全）。
+     *
+     * @param {object} resultData サーバから返ってきたJSON
+     * @return {boolean}
+     */
+    function isConversationNotExistError(resultData) {
+        if (!resultData || typeof resultData.message !== 'string') return false;
+        return /conversation\s+not\s+exists/i.test(resultData.message);
+    }
+
+    /**
      * 送信処理のメインハンドラ
      * 1. 入力テキストを取得・検証
      * 2. ユーザーメッセージをUIに表示
      * 3. ローディング表示
      * 4. WP REST APIにPOST
-     * 5. AIの応答を表示
+     * 5. AIの応答を表示（"Conversation Not Exists" の場合は会話IDを捨てて1回だけ自動再送）
+     *
+     * @param {boolean} [isRetry] 自動再送かどうか（再送ループ防止用）
+     * @param {string}  [retryMessage] 再送時のメッセージ本文（UIに再表示しないため必要）
      */
-    function handleSend() {
-        if (isSending) return;
+    function handleSend(isRetry, retryMessage) {
+        if (isSending && !isRetry) return;
 
-        var message = els.textarea.value.trim();
-        if (!message) return;
+        var message;
+        if (isRetry) {
+            message = retryMessage;
+        } else {
+            message = els.textarea.value.trim();
+            if (!message) return;
 
-        // 入力クリア
-        els.textarea.value = '';
-        els.textarea.style.height = 'auto';
+            // 入力クリア
+            els.textarea.value = '';
+            els.textarea.style.height = 'auto';
 
-        // ウェルカムメッセージを消す
-        var welcome = els.messages.querySelector('.dify-chat-welcome');
-        if (welcome) {
-            welcome.remove();
+            // ウェルカムメッセージを消す
+            var welcome = els.messages.querySelector('.dify-chat-welcome');
+            if (welcome) {
+                welcome.remove();
+            }
+
+            // ユーザーメッセージ表示
+            appendMessage(message, 'user');
         }
-
-        // ユーザーメッセージ表示
-        appendMessage(message, 'user');
 
         // ローディング表示
         var loadingEl = appendLoading();
@@ -275,11 +300,21 @@
                     if (result.data.conversation_id) {
                         sessionStorage.setItem(STORAGE_KEY, result.data.conversation_id);
                     }
-                } else {
-                    // APIエラー
-                    var errorMsg = result.data.message || 'エラーが発生しました。';
-                    appendMessage(errorMsg, 'error');
+                    return;
                 }
+
+                // 「会話が存在しない」エラーの場合は古い会話IDを捨てて自動再送（1回だけ）
+                if (!isRetry && isConversationNotExistError(result.data)) {
+                    sessionStorage.removeItem(STORAGE_KEY);
+                    isSending = false;
+                    els.sendBtn.disabled = false;
+                    handleSend(true, message);
+                    return;
+                }
+
+                // それ以外のAPIエラー
+                var errorMsg = (result.data && result.data.message) || 'エラーが発生しました。';
+                appendMessage(errorMsg, 'error');
             })
             .catch(function () {
                 // ネットワークエラー
@@ -289,9 +324,12 @@
                 appendMessage('通信エラーが発生しました。しばらくしてからお試しください。', 'error');
             })
             .finally(function () {
-                isSending = false;
-                els.sendBtn.disabled = false;
-                els.textarea.focus();
+                // 再送中はここで送信状態を解放しない（再送の handleSend が解放する）
+                if (isSending) {
+                    isSending = false;
+                    els.sendBtn.disabled = false;
+                    els.textarea.focus();
+                }
             });
     }
 

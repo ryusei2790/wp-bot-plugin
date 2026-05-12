@@ -3,7 +3,7 @@
  * Plugin Name: Dify Chat Bot
  * Plugin URI:  https://github.com/ryusei/dify-chat-bot
  * Description: Dify AIと連携するチャットボットウィジェット。管理画面からボタン・ビュワーの位置・色・API設定をカスタマイズ可能。
- * Version:     1.0.0
+ * Version:     1.0.1
  * Author:      Ryusei
  * License:     GPL v2 or later
  * Text Domain: dify-chat-bot
@@ -19,9 +19,28 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'DIFY_CHAT_BOT_VERSION', '1.0.0' );
+define( 'DIFY_CHAT_BOT_VERSION', '1.0.1' );
 define( 'DIFY_CHAT_BOT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DIFY_CHAT_BOT_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * アセットの ?ver= 用バージョン文字列を返す
+ *
+ * 設計意図：
+ * プラグイン VERSION 固定値だとファイルを更新してもブラウザ／WPの
+ * アセットキャッシュが剥がれない。filemtime() でファイル更新時刻を
+ * 取り、ファイル変更のたびに ?ver= を変えてキャッシュを確実に剥がす。
+ * filemtime が失敗した（ファイル不存在など）場合はプラグインVERSIONに
+ * フォールバックする。
+ *
+ * @param string $relative_path プラグイン直下からの相対パス（例: assets/js/chat-widget.js）
+ * @return string バージョン文字列
+ */
+function dify_chat_bot_asset_version( $relative_path ) {
+    $full_path = DIFY_CHAT_BOT_PATH . $relative_path;
+    $mtime     = @filemtime( $full_path );
+    return $mtime ? (string) $mtime : DIFY_CHAT_BOT_VERSION;
+}
 
 // クラスファイルの読み込み
 require_once DIFY_CHAT_BOT_PATH . 'includes/class-admin.php';
@@ -59,7 +78,7 @@ function dify_chat_bot_enqueue_assets() {
         'dify-chat-bot-widget',
         DIFY_CHAT_BOT_URL . 'assets/css/chat-widget.css',
         array(),
-        DIFY_CHAT_BOT_VERSION
+        dify_chat_bot_asset_version( 'assets/css/chat-widget.css' )
     );
 
     // JS
@@ -67,7 +86,7 @@ function dify_chat_bot_enqueue_assets() {
         'dify-chat-bot-widget',
         DIFY_CHAT_BOT_URL . 'assets/js/chat-widget.js',
         array(),
-        DIFY_CHAT_BOT_VERSION,
+        dify_chat_bot_asset_version( 'assets/js/chat-widget.js' ),
         true
     );
 
