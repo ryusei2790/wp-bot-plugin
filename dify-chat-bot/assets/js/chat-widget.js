@@ -55,9 +55,11 @@
         // ヘッダー
         var header = document.createElement('div');
         header.className = 'dify-chat-header';
+        // type="button" を明示しておくことで、テーマが祖先に <form> を持つ稀なケースでも
+        // submit 扱いされてページ遷移してしまう事故を防ぐ（防御的措置）。
         header.innerHTML =
             '<h3 class="dify-chat-header__title">AI チャット</h3>' +
-            '<button class="dify-chat-header__close" aria-label="チャットを閉じる">' +
+            '<button type="button" class="dify-chat-header__close" aria-label="チャットを閉じる">' +
             '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
             '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
             '</svg></button>';
@@ -110,13 +112,27 @@
 
     /**
      * 各UI要素にイベントリスナーを設定
+     *
+     * ここでは「ビュワー内クリックは閉じない／外側クリックは閉じる」というUXを成立させるため、
+     * document レベルの click と keydown を捕捉する。
      */
     function bindEvents() {
         // チャットボタン → ビュワーを開く
         els.btn.addEventListener('click', openViewer);
 
         // 閉じるボタン → ビュワーを閉じる
-        els.closeBtn.addEventListener('click', closeViewer);
+        // クリックが document まで伝播すると「外側クリック判定」で再評価が走るため、
+        // 念のため停止しておく（実害はないが副作用を最小化する）
+        els.closeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeViewer();
+        });
+
+        // ビュワー内側のクリックは document へ伝播させない
+        // → 「外側クリックで閉じる」ロジックが内側クリックで誤発火しないようにする
+        els.viewer.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
 
         // 送信ボタン
         els.sendBtn.addEventListener('click', handleSend);
@@ -134,18 +150,55 @@
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 80) + 'px';
         });
+
+        // ビュワー外側クリックで閉じる
+        // ビュワーが開いている時だけ反応する。内側クリックは上の stopPropagation で除外済み。
+        document.addEventListener('click', function () {
+            if (!isViewerOpen()) return;
+            closeViewer();
+        });
+
+        // ESC キーで閉じる
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isViewerOpen()) {
+                closeViewer();
+            }
+        });
     }
 
     // =============================================
     // 開閉制御
     // =============================================
 
-    function openViewer() {
+    /**
+     * ビュワーが開いているかを判定
+     * @return {boolean}
+     */
+    function isViewerOpen() {
+        return !els.viewer.classList.contains('dify-chat-viewer--hidden');
+    }
+
+    /**
+     * ビュワーを開く
+     *
+     * @param {MouseEvent} [e] チャットボタンの click イベント
+     *
+     * 注意：このクリックが document まで伝播すると、同じ tick で
+     * 「外側クリック → 閉じる」ハンドラが発火して開いた瞬間に閉じてしまう。
+     * そのため stopPropagation で確実に止める。
+     */
+    function openViewer(e) {
+        if (e && typeof e.stopPropagation === 'function') {
+            e.stopPropagation();
+        }
         els.viewer.classList.remove('dify-chat-viewer--hidden');
         els.btn.classList.add('dify-chat-btn--hidden');
         els.textarea.focus();
     }
 
+    /**
+     * ビュワーを閉じる
+     */
     function closeViewer() {
         els.viewer.classList.add('dify-chat-viewer--hidden');
         els.btn.classList.remove('dify-chat-btn--hidden');
