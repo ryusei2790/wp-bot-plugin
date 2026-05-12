@@ -138,11 +138,15 @@
         els.sendBtn.addEventListener('click', handleSend);
 
         // Enter で送信（Shift+Enter は改行）
+        // 日本語IME入力中の Enter（変換確定）を送信扱いしないよう、
+        // isComposing と keyCode 229 の両方でガードする。
+        // - isComposing: 仕様準拠のモダンブラウザ
+        // - keyCode === 229: Safari など isComposing が常にfalseになる環境への保険
         els.textarea.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
+            if (e.key !== 'Enter' || e.shiftKey) return;
+            if (e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            handleSend();
         });
 
         // テキストエリアの自動リサイズ
