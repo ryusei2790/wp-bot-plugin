@@ -135,14 +135,23 @@
         });
 
         // 送信ボタン
-        els.sendBtn.addEventListener('click', handleSend);
+        // addEventListener の click ハンドラに handleSend を直接渡すと、
+        // MouseEvent が第1引数 isRetry に流れて再送経路に入り、message が
+        // undefined のまま送信されてしまう。匿名関数でラップして引数を遮断する。
+        els.sendBtn.addEventListener('click', function () {
+            handleSend();
+        });
 
         // Enter で送信（Shift+Enter は改行）
+        // 日本語IME入力中の Enter（変換確定）を送信扱いしないよう、
+        // isComposing と keyCode 229 の両方でガードする。
+        // - isComposing: 仕様準拠のモダンブラウザ
+        // - keyCode === 229: Safari など isComposing が常にfalseになる環境への保険
         els.textarea.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
+            if (e.key !== 'Enter' || e.shiftKey) return;
+            if (e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            handleSend();
         });
 
         // テキストエリアの自動リサイズ
@@ -237,6 +246,10 @@
      * @param {string}  [retryMessage] 再送時のメッセージ本文（UIに再表示しないため必要）
      */
     function handleSend(isRetry, retryMessage) {
+        // 防御的に boolean 正規化。MouseEvent などが誤って渡された場合に
+        // 再送経路に流れ込んで message=undefined で送信される事故を防ぐ。
+        isRetry = isRetry === true;
+
         if (isSending && !isRetry) return;
 
         var message;
