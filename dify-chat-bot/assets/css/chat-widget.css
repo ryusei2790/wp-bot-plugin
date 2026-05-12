@@ -221,29 +221,40 @@
 
 /* ========================================
    入力エリア
+
+   テーマ側CSSの button/textarea スタイルがウィジェットの見た目を破壊する
+   ことが多いため、主要なレイアウト・サイズ系プロパティには !important を
+   付与してテーマ干渉を遮断する。色や枠線などの装飾系はテーマと自然に
+   調和させたいので、原則 !important を付けない方針。
    ======================================== */
 .dify-chat-input {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    align-items: center !important;
     padding: 12px;
     border-top: 1px solid #e0e0e0;
     flex-shrink: 0;
     background-color: var(--dify-viewer-bg-color, #ffffff);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .dify-chat-input__text {
-    flex: 1;
+    flex: 1 1 auto !important;
+    min-width: 0 !important; /* flexアイテムのデフォルト min-width:auto がオーバーフロー原因になるため */
     border: 1px solid #d0d0d0;
     border-radius: 8px;
     padding: 10px 12px;
     font-size: 14px;
     outline: none;
-    resize: none;
+    resize: none !important;
     max-height: 80px;
     min-height: 20px;
     font-family: inherit;
     line-height: 1.4;
     transition: border-color 0.15s ease;
+    box-sizing: border-box !important;
+    background-color: #ffffff;
+    color: #333333;
 }
 
 .dify-chat-input__text:focus {
@@ -255,34 +266,44 @@
 }
 
 .dify-chat-input__send {
-    margin-left: 8px;
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 50%;
-    background-color: var(--dify-viewer-header-color, #0073aa);
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    margin-left: 8px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background-color: var(--dify-viewer-header-color, #0073aa) !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
     transition: opacity 0.15s ease;
+    box-sizing: border-box !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-indent: 0 !important;
+    line-height: 1 !important;
 }
 
 .dify-chat-input__send:hover {
-    opacity: 0.85;
+    opacity: 0.85 !important;
 }
 
 .dify-chat-input__send:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
 }
 
 .dify-chat-input__send svg {
-    width: 18px;
-    height: 18px;
-    fill: currentColor;
+    width: 18px !important;
+    height: 18px !important;
+    fill: currentColor !important;
+    pointer-events: none; /* クリックは親 button に集約 */
+    display: block;
 }
 
 /* ========================================
